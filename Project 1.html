@@ -1,0 +1,758 @@
+
+<!-- saved from url=(0054)http://rpucella.net/courses/dataviz-fa15/project1.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta charset="utf-8">
+    <title>Project 1</title>
+</head>
+
+<body>
+  
+  <h1>Project 1 — Warm Up</h1> 
+  <h2>Team: ??</h2>
+  
+  <p>Question 1</p>
+  <canvas id="canvas-q1" height="500" width="500" style="border: 1px solid grey">
+  </canvas>
+
+  <p>Question 2</p>
+  <canvas id="canvas-q2" height="500" width="500" style="border: 1px solid grey">
+  </canvas>
+
+  <p>Question 3</p>
+  <canvas id="canvas-q3" height="500" width="500" style="border: 1px solid grey">
+  </canvas>
+
+  
+  <script>
+
+window.addEventListener("load",run,false);
+
+function run () {
+   // Put calls to your drawing functions for Q1, Q2, Q3 here
+   q1();
+   q2();
+   q3();
+}
+
+
+/************************************************************
+ *
+ * Question 1
+ * 
+ ************************************************************/
+
+var CanvasObject = function(canvas){
+    this.x = 0;
+    this.y = 0;
+    this.scaleX = 1;
+    this.scaleY = 1;
+    this.angle = 0;
+    this.canvas = canvas;
+}
+
+CanvasObject.prototype = {
+    // Change X and Y position with memory of last position
+    translate: function(x, y) {
+        this.x += x;
+        this.y += y;
+    },
+
+    // Change X and Y scale with memory of last scale, allows for changing both at the same time
+    scale: function(scaleX, scaleY) {
+        // Scale both x and y;
+        if(scaleY === undefined){
+            this.scaleX *= scaleX;
+            this.scaleY *= scaleX;
+            return;
+        }
+        this.scaleX *= scaleX;
+        this.scaleY *= scaleY;
+    },
+
+    // Change angle with memory of last angle
+    rotate: function(angle) {
+        this.angle += angle;
+    },
+
+    context: function(){
+        return document.getElementById(this.canvas).getContext("2d");
+    },
+
+    // Update function applied every new frame
+    update: function(){
+
+    },
+
+    // Draws all features.  Keep all interesting things in here (untranslated)
+    // Overwrite for individual objects
+    drawFeatures: function(){
+
+    },
+
+    // Draws a transformed
+    draw: function() {
+        var ctx = this.context();
+        ctx.save() // Save current transformation matrix
+
+        // Apply shifts to transformation matrix
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle * Math.PI / 180);
+        ctx.scale(this.scaleX, this.scaleY)
+        if(this.color){
+            // Supports color propogation
+            var fillTemp = ctx.fillStyle;
+            ctx.fillStyle = this.color;
+            var strokeTemp = ctx.strokeStyle;
+            ctx.strokeStyle = this.color;
+
+            // Draw all features.  Changes in this propogate to all children because of above transforms
+            this.drawFeatures();
+
+            ctx.fillStyle = fillTemp;
+            ctx.strokeStyle = this.color;
+
+        }
+        else {
+            this.drawFeatures();
+        }
+
+        // Unapply shifts from this context
+        ctx.restore();
+    }
+}
+
+var CanvasPolygon = function(canvas, points, filled){
+    CanvasObject.call(this, canvas);
+    this.points = points;
+    this.filled = filled;
+    this.color = null;
+    this.drawFeatures = function() {
+        var points = this.points;
+        var ctx = this.context();
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+        for(var i = 1; i < points.length; i++){
+            ctx.lineTo(points[i][0], points[i][1]);
+        }
+        ctx.closePath();
+        if(filled){
+            ctx.fill();
+        }
+        else {
+            ctx.stroke();
+        }
+    };
+};
+
+CanvasPolygon.prototype = Object.create(CanvasObject.prototype);
+
+var CanvasGear = function(canvas, innerRadius, outerRadius, teethCount, teethWidthFraction) {
+    CanvasObject.call(this, canvas);
+    this.count = teethCount;
+    this.innerRadius = innerRadius;
+    this.outerRadius = outerRadius;
+    this.holeRadius = 0.15 * innerRadius;
+    this.spokeInner = 0.30 * innerRadius;
+    this.fraction = teethWidthFraction;
+    this.outerFraction = 0.8;
+    this.innerFraction = 0.8;
+    this.tooth = new CanvasObject(canvas);
+    this.spoke = new CanvasObject(canvas);
+    this.spokeCount = 4;
+    this.tooth.self = this;
+    this.spoke.self = this;
+    this.tooth.drawFeatures = function() {
+        var ctx = this.self.context();
+        var innerBegin = new Vector([this.self.innerRadius, 0]);
+        var innerEnd = new Vector([this.self.innerRadius, 0]);
+        var outer = new Vector([this.self.outerRadius, 0]);
+
+        innerBegin.rotate(Math.PI / this.self.count);
+        innerEnd.rotate(innerBegin.angle() * this.self.fraction);
+        outer.rotate(innerEnd.angle() * this.self.outerFraction);
+
+        ctx.beginPath();
+        ctx.moveTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction);
+        ctx.lineTo(innerBegin.vals[0], innerBegin.vals[1]);
+        ctx.lineTo(innerEnd.vals[0]  , innerEnd.vals[1]);
+        ctx.lineTo(outer.vals[0]     , outer.vals[1]);
+        ctx.lineTo(outer.vals[0]     , -1 * outer.vals[1]);
+        ctx.lineTo(innerEnd.vals[0]  , -1 * innerEnd.vals[1]);
+        ctx.lineTo(innerBegin.vals[0], -1 * innerBegin.vals[1]);
+        ctx.lineTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * -1 * this.self.innerFraction);
+        ctx.arcTo(this.self.innerRadius * this.self.innerFraction, 0, innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction, this.self.innerRadius);
+        ctx.fill();
+    };
+    this.spoke.thickness = function() {
+        return this.self.spokeInner - this.self.holeRadius;
+    };
+    this.spoke.drawFeatures = function() {
+        var ctx = this.self.context();
+        ctx.rect(this.self.holeRadius, this.thickness() * -0.5, this.self.innerRadius - this.self.holeRadius, this.thickness());
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, this.self.spokeInner, 0, 2 * Math.PI / this.self.spokeCount, false);
+        ctx.arc(0, 0, this.self.holeRadius, 2 * Math.PI / this.self.spokeCount, 0, true);
+        ctx.fill();
+    };
+    this.drawFeatures = function() {
+        for(var i = 0; i < this.count; i++){
+            this.tooth.draw();
+            this.tooth.rotate(360 / this.count);
+        }
+        for(var i = 0; i < this.spokeCount; i++){
+            this.spoke.draw();
+            this.spoke.rotate(360 / this.spokeCount);
+        }
+    };
+};
+
+CanvasGear.prototype = Object.create(CanvasObject.prototype);
+
+
+// Tests drawing function and the CanvasObject / CanvasPolygon APIs
+var hexagrams = function(){
+    var canvas = "canvas-q1";
+    var hexagram = new CanvasObject(canvas);
+    hexagram.triangle = new CanvasPolygon(canvas, [[0, 50], [50*Math.cos(7/6 * Math.PI), 50*Math.sin(7/6 * Math.PI)], [50*Math.cos(-1 * Math.PI / 6), 50*Math.sin(-1 * Math.PI / 6)]]);
+    hexagram.drawFeatures = function(){
+        // Draw two equilateral triangles.
+        // Essentially two child triangles that are drawn each time.
+        this.triangle.draw();
+        this.triangle.rotate(180); // rotate 180
+        this.triangle.draw();
+        this.triangle.rotate(-180); // return to 0
+    };
+
+    var quadHex = new CanvasObject(canvas);
+    quadHex.drawFeatures = function(){
+        // Draw four hexagrams using the transforms.  All transforms should be propogated from the parent to child
+        hexagram.x = -60;
+        hexagram.y = -60;
+        hexagram.draw();
+
+        hexagram.translate(120, 0);
+        hexagram.draw();
+
+        hexagram.translate(0, 120);
+        hexagram.draw();
+
+        hexagram.translate(-120, 0);
+        hexagram.draw();
+    };
+
+    quadHex.x = 250;
+    quadHex.y = 250;
+    quadHex.color = "rgba(0, 0, 0, 1)"
+    quadHex.draw();
+    quadHex.color = "rgba(255, 0, 0, 1)";
+    quadHex.rotate(5);
+    quadHex.scale(1.5);
+    quadHex.draw();
+    quadHex.rotate(5);
+    quadHex.scale(1.5);
+    quadHex.color = "rgba(0, 0, 255, 1)";
+    quadHex.draw();
+}
+
+var gearExample = function(){
+    var canvas = "canvas-q1";
+    var gearDrawing = new CanvasGear(canvas, 70, 80, 24, 0.5);
+    var gearSmall = new CanvasGear(canvas, 55, 65, 18, 0.5);
+    gearDrawing.x = 250;
+    gearDrawing.y = 250;
+    gearDrawing.filled = true;
+    gearDrawing.color = "rgba(150, 100, 100, 1)";
+
+    gearDrawing.draw();
+
+    gearSmall.x = 350;
+    gearSmall.y = 150;
+    gearSmall.filled = true;
+    gearSmall.color = "rgba(100, 150, 100, 1)";
+
+    gearSmall.draw();
+}
+
+var q1 = function(){
+    gearExample();
+};
+
+// draw function for 
+
+
+/************************************************************
+ *
+ * Question 2
+ * 
+ ************************************************************/
+
+// the moves for drawing letter H, for debugging
+
+var letterHMoves = ["f",40,
+            "r",90,
+            "f",40,
+            "l",90,
+            "f",20,
+            "l",90,
+            "f",40,
+            "r",90,
+            "f",40,
+            "r",90,
+            "f",100,
+            "r",90,
+            "f",40,
+            "r",90,
+            "f",40,
+            "l",90,
+            "f",20,
+            "l",90,
+            "f",40,
+            "r",90,
+            "f",40,
+            "r",90,
+            "f",100];
+
+var q2 = function(){
+
+};
+
+/************************************************************
+ *
+ * Question 3
+ * 
+ ************************************************************/
+
+var Vector = function(vals) {
+    this.vals = vals;
+};
+
+Vector.prototype = {
+    rotate: function(theta) {
+        var vals = [this.vals[0], this.vals[1]];
+        this.vals[0] = vals[0] * Math.cos(theta) - vals[1] * Math.sin(theta);
+        this.vals[1] = vals[0] * Math.sin(theta) + vals[1] * Math.cos(theta);
+        return this;
+    },
+    setAngle: function(theta) {
+        this.vals = [this.magnitude(), 0];
+        return this.rotate(theta);
+    },
+    scale: function(scale) {
+        this.vals = [this.vals[0] * scale, this.vals[1] * scale];
+        return this;
+    },
+    scalar: function(scale) {
+        return new Vector([this.vals[0] * scale, this.vals[1] * scale]);
+    },
+    add: function(vector) {
+        return new Vector([this.vals[0] + vector.vals[0], this.vals[1] + vector.vals[1]]);
+    },
+    sub: function(vector) {
+        return new Vector([this.vals[0] - vector.vals[0], this.vals[1] - vector.vals[1]]);
+    },
+    dot: function(vector) {
+        return this.vals[0] * vector.vals[0] + this.vals[1] * vector.val[1];
+    },
+    cross: function(vector) {
+        return this.vals[0] * vector.vals[1] - this.vals[1] * vector.vals[0];
+    },
+    angle: function(vector) {
+        return Math.atan2(this.vals[1], this.vals[0]);
+    },
+    unit: function() {
+        var magnitude = this.magnitude();
+        return new Vector([this.vals[0] / magnitude, this.vals[1] / magnitude]);
+    },
+    equals: function(vector){
+        return this.vals[0] === vector.vals[0] && this.vals[1] === vector.vals[1];
+    },
+    magnitude: function() {
+        return Math.pow(Math.pow(this.vals[0], 2) + Math.pow(this.vals[1], 2), 0.5);
+    }
+}
+
+var PhysicsChange = function(){
+    this.physicsObjects = [];
+};
+
+PhysicsChange.prototype = {
+    apply: function(dt) {
+    }
+};
+
+PhysicsSpring = function (springConstant, restingLength, objectOne, objectTwo) {
+    PhysicsChange.call(this);
+    this.k = springConstant;
+    this.physicsObjects = [objectOne, objectTwo];
+    this.restingLength = restingLength;
+    this.apply = function () {
+        var vec = this.physicsObjects[1].p.sub(this.physicsObjects[0].p);
+        var mag = this.k * (vec.magnitude() - this.restingLength);
+        var force = vec.unit().scalar(mag);
+        this.physicsObjects[0].addForce(force, 0);
+        force.scale(-1);
+        this.physicsObjects[1].addForce(force, 0);
+    };
+}
+
+PhysicsResistance = function(constant, objectResisted, objectsResistance) {
+    PhysicsChange.call(this);
+    this.k = constant;
+    this.physicsObjects = objectsResistance;
+    this.physicsObjects.unshift(objectResisted);
+    this.apply = function () {
+        var force = this.physicsObjects[0].dp.scalar(-1 * this.k);
+        this.physicsObjects[0].addForce(force);
+
+        // Perhaps including fluid dynamics later
+        if(this.physicsObjects.length === 1){
+            return;
+        }
+        var split = force.scalar(-1 / (this.physicsObjects.length - 1));
+        for(var i = 1; i < this.physicsObjects.length; i++){
+            this.physicsObjects[i].addForce(split, 0);
+        }
+    }
+}
+
+// Assumes that change in R is negligible
+PhysicsGravityConstant = function(gravity, objects) {
+    this.g = gravity; // Gravity is a vector with direction
+    this.physicsObjects = objects;
+    this.apply = function() {
+        for(var i = 0; i < objects.length; i++){
+            objects[i].addForce(this.g.scalar(objects[i].m));
+        }
+    }
+}
+
+var PhysicsObject = function(){
+    this.m = 1; // Mass
+    this.i = 1; // Angular Inertia
+    this.p = new Vector([0, 0]);
+    this.dp = new Vector([0, 0]);
+    this.ddp = new Vector([0, 0]);
+    this.a = 0;
+    this.da = 0;
+    this.dda = 0;
+    this.drawing = null;
+    this.forceDrawing = null;
+    this.impulseDrawing = null;
+    this.fixed = false; // If true, ignores all changes to above values
+}
+
+PhysicsObject.prototype = {
+    addForce: function(force, torque) {
+        this.ddp = this.ddp.add(force.scale(1 / this.m));
+        this.dda += torque / this.i;
+        if(this.fixed){
+            this.ddp.scale(0);
+            this.dda = 0;
+        }
+    },
+    addImpulse: function(impulse, angularImpulse) {
+        this.dp = this.dp.add(impulse.scale(1 / this.m));
+        this.da += angularImpulse / this.i;
+        if(this.fixed){
+            this.dp.scale(0);
+            this.da = 0;
+        }
+    },
+    addTransform: function(translation, rotation) {
+        if(this.fixed){
+            return;
+        }
+        this.p = this.p.add(translation);
+        this.a += rotation;
+    },
+    resetForce: function() {
+        this.ddp = this.ddp.scale(0);
+        this.dda = 0;
+    },
+    draw: function() {
+        if(this.drawing) {
+            this.drawing.x = this.p.vals[0];
+            this.drawing.y = this.p.vals[1];
+            this.drawing.angle = this.a;
+            this.drawing.draw();
+        }
+        if(this.forceDrawing){
+            this.forceDrawing.x = this.p.vals[0];
+            this.forceDrawing.y = this.p.vals[1];
+            this.forceDrawing.angle = this.ddp.angle() * 180 / Math.PI - 90;
+            this.forceDrawing.scaleY = this.ddp.magnitude() / 100;
+            this.forceDrawing.draw();
+        }
+        if(this.impulseDrawing) {
+            this.impulseDrawing.x = this.p.vals[0];
+            this.impulseDrawing.y = this.p.vals[1];
+            this.impulseDrawing.angle = this.dp.angle() * 180 / Math.PI - 90;
+            this.impulseDrawing.scaleY = this.dp.magnitude() / 100;
+            this.impulseDrawing.draw();
+        }
+    }
+}
+
+// Creates "perfectly" mated gears that rotate according to their teeth count.
+// An entire system 
+// gearlinks is a list of gear tuples and their linking style, that is:
+// [gear 1, gear 2, false] for different directions
+// [gear 1, gear 2, true] for same direction
+// ASSUMES gear 1 and gear 2 are DIFFERENT
+// Note: gears must be created beforehand
+PhysicsGearSystem = function(gearLinks){
+    PhysicsObject.call(this);
+    this.gearlinks = gearLinks;
+    this.gears = [];
+    // Calculates center of mass
+    this.mass = function() {
+        var totalMass = 0;
+        for(var i = 0; i < this.gears.length; i++) {
+            totalMass += this.gears[i].m;
+        }
+        return totalMass;
+    }
+    // returns position Vector 
+    this.cm = function() {
+        var totalWeightedMass = new Vector([0, 0]);
+        var totalMass = 0;
+        for(var i = 0; i < this.gears.length; i++) {
+            var pos = this.gears[i].p;
+            var mass = this.gears[i].m;
+            totalWeightedMass.add(pos.scalar(mass));
+            totalMass += mass;
+        }
+        return totalWeightedMass.scalar(1/totalMass);
+    };
+
+    this.addGear = function(newGear) {
+
+    };
+
+    for(var i = 0; i < gearLinks.length; i++){
+        var gear0 = gearLinks[i][0];
+        var gear1 = gearLinks[i][1];
+        var found0 = false;
+        var found1 = false;
+        for(var j = 0; j < this.gears; j++) {
+            found0 = found0 || (this.gears[j] === gear0);
+            found1 = found1 || (this.gears[j] === gear1);
+        }
+        if(!found0) {
+            this.addGear(gear0);
+        }
+        if(!found1) {
+            this.addGear(gear1);
+        }
+    };
+    this.addForce = function(force, torque, gear) {
+
+    };
+    this.addImpulse = function(impulse, angularImpulse, gear) {
+
+    };
+    this.resetForce = function() {
+        this.ddp.scale(0);
+        this.dda = 0;
+        this.gears.forEach(function (gear) {
+            gear.resetForce();
+        });
+    }
+
+    this.draw = function() {
+        var ctx = this.
+        for(var i = 0; i < this.gears.length; i++) {
+            var drawing = this.gears.drawing;
+        }
+        if(this.drawing) {
+            this.drawing.x = this.p.vals[0];
+            this.drawing.y = this.p.vals[1];
+            this.drawing.angle = this.a;
+            this.drawing.draw();
+        }
+    };
+}
+PhysicsGearSystem.prototype = Object.create(PhysicsObject.prototype);
+
+var PhysicsDisk = function(mass, radius) {
+    PhysicsObject.call(this);
+    this.m = mass;
+    this.r = radius;
+    this.i = 0.25 * mass * radius * radius;
+}
+
+PhysicsDisk.prototype = Object.create(PhysicsObject.prototype);
+
+var PhysicsGear = function(mass, canvas, teethCount, innerRadius, outerRadius, teethWidthFraction) {
+    PhysicsDisk.call(this, mass, (innerRadius + outerRadius) * 0.5);
+    this.drawing = new CanvasGear(canvas, innerRadius, outerRadius, teethCount, teethWidthFraction);
+    this.drivingGear = false;
+    this.gearSystem = null;
+    this.addForce = function(force, torque) {
+        if(this.gearSystem !== null){
+            this.gearSystem.addForce(force, torque, this);
+            return;
+        }
+        this.ddp = this.ddp.add(force.scale(1 / this.m));
+        this.dda += torque / this.i;
+        if(this.fixed){
+            this.ddp.scale(0);
+            this.dda = 0;
+        }
+    };
+    this.addImpulse = function(impulse, angularImpulse) {
+        if(this.gearSystem !== null){
+            this.gearSystem.addImpulse(impulse, angularImpulse, this);
+            return;
+        }
+        this.dp = this.dp.add(impulse.scale(1 / this.m));
+        this.da += angularImpulse / this.i;
+        if(this.fixed){
+            this.dp.scale(0);
+            this.da = 0;
+        }
+    };
+    this.addTransform = function(translation, rotation) {
+        if(this.fixed){
+            return;
+        }
+        this.p = this.p.add(translation);
+        this.a += rotation;
+    };
+}
+
+PhysicsGear.prototype = Object.create(PhysicsDisk.prototype);
+
+var PhysicsSystem = function(canvas) {
+    this.canvas = canvas;
+    this.physicsObjects = [];
+    this.physicsForces = [];
+    this.physicsImpulses = [];
+    this.physicsTransforms = [];
+    this.lastTime = new Date() / 1000;
+    this.dt = 0;
+};
+
+PhysicsSystem.prototype = {
+    // Get change in time in millisceonds
+    updateDt: function(){
+        var newTime = new Date() / 1000;
+        this.dt = newTime - this.lastTime;
+        this.lastTime = newTime;
+    },
+    applyForces: function() {
+        var self = this;
+        this.physicsForces.forEach(function (force) {
+            force.apply(self.dt);
+        });
+    },
+    applyImpulses: function() {
+        var self = this;
+        this.physicsImpulses.forEach(function (impulse) {
+            impulse.apply(self.dt);
+        });
+        this.physicsObjects.forEach(function (object) {
+            object.addImpulse(object.ddp.scalar(self.dt), object.dda * self.dt);
+        });
+    },
+    applyTransforms: function() {
+        var self = this;
+        this.physicsTransforms.forEach(function (transform) {
+            transform.apply(self.dt);
+        });
+        this.physicsObjects.forEach(function (object) {
+            object.addTransform(object.dp.scalar(self.dt), object.da * self.dt);
+        });
+    },
+    resetForces: function() {
+        this.physicsObjects.forEach(function (object) {
+            object.resetForce();
+        });
+    },
+    redraw: function() {
+        var canvas = document.getElementById(this.canvas);
+        var context = canvas.getContext("2d");
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        this.physicsObjects.forEach(function (object) {
+            object.draw();
+        });
+    },
+    update: function() {
+        this.updateDt();
+        this.applyForces();
+        this.applyImpulses();
+        this.applyTransforms();
+        this.redraw();
+        this.resetForces();
+    },
+    addObject: function(physicsObject) {
+        this.physicsObjects.push(physicsObject);
+    },
+    addForce: function(physicsForce) {
+        this.physicsForces.push(physicsForce);
+    },
+    addImpulse: function(physicsImpulse) {
+        this.physicsImpulses.push(physicsImpulse);
+    },
+    addTransform: function(physicsTransform) {
+        this.physicsTransforms.push(physicsTransform);
+    }
+};
+
+var q3 = function(){
+    var canvas = "canvas-q3";
+    var system = new PhysicsSystem(canvas);
+    var ball1 = new PhysicsObject();
+    var ball2 = new PhysicsObject();
+    ball1.addTransform(new Vector([250, 100]));
+    ball1.fixed = true;
+    ball2.addTransform(new Vector([400, 100]));
+    var drawing1 = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
+    var drawing2 = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
+    drawing1.color = "rgba(255, 0, 0, 1)";
+    drawing2.color = "rgba(0, 0, 255, 1)";
+    ball1.drawing = drawing1;
+    ball2.drawing = drawing2;
+
+    ball2.forceDrawing = new CanvasObject(canvas);
+    ball2.forceDrawing.drawFeatures = function() {
+        var ctx = this.context();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 10);
+        ctx.moveTo(-3, 7);
+        ctx.lineTo(0, 10);
+        ctx.lineTo(3, 7);
+        ctx.stroke();
+    };
+
+    ball2.impulseDrawing = new CanvasObject(canvas);
+    ball2.impulseDrawing.drawFeatures = ball2.forceDrawing.drawFeatures;
+
+    var spring1 = new PhysicsSpring(2000, 150, ball1, ball2);
+    var airResistance = new PhysicsResistance(0.1, ball2, []);
+    var gravity = new PhysicsGravityConstant(new Vector([0, 1000]), [ball1, ball2]);
+
+    system.addObject(ball1);
+    system.addObject(ball2);
+    system.addForce(spring1);
+    system.addForce(airResistance);
+    system.addForce(gravity);
+
+    var gear = new PhysicsGear(1, canvas, 12, 50, 60, 0.5);
+    system.addObject(gear);
+
+    setInterval(function() {
+        system.update();
+    }, 15);
+};
+
+  </script>
+
+  
+
+
+</body></html>
