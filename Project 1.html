@@ -155,8 +155,8 @@ var CanvasGear = function(canvas, innerRadius, outerRadius, teethCount, teethWid
     this.holeRadius = 0.15 * innerRadius;
     this.spokeInner = 0.30 * innerRadius;
     this.fraction = teethWidthFraction;
-    this.outerFraction = 0.8;
-    this.innerFraction = 0.8;
+    this.outerFraction = 0.9;
+    this.innerFraction = 0.9;
     this.tooth = new CanvasObject(canvas);
     this.spoke = new CanvasObject(canvas);
     this.spokeCount = 4;
@@ -274,10 +274,118 @@ var gearExample = function(){
     gearSmall.color = "rgba(100, 150, 100, 1)";
 
     gearSmall.draw();
+};
+
+var drawClock = function() {
+    var canvas = "canvas-q1";
+    var gears = new CanvasObject(canvas);
+    gears.drawFeatures = function() {
+        var canvas = this.canvas;
+        var secondsGearSmall = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var seconds2minutes1 = new CanvasGear(canvas, 150, 155, 120, 0.5); // Divide by 5
+        var seconds2minutes2 = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var seconds2minutes3 = new CanvasGear(canvas, 120, 125,  96, 0.5); // Divide by 4
+        var seconds2minutes4 = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var minutesGearBig   = new CanvasGear(canvas,  90,  95,  72, 0.5); // Divide by 3
+        var minutesGearSmall = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var minutes2hours1   = new CanvasGear(canvas, 150, 155, 120, 0.5); // Divide by 5
+        var minutes2hours2   = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var minutes2hours3   = new CanvasGear(canvas, 120, 125,  96, 0.5); // Divide by 4
+        var minutes2hours4   = new CanvasGear(canvas,  30,  35,  24, 0.5);
+        var hoursGearBig     = new CanvasGear(canvas,  90,  95,  72, 0.5); // Divide by 3
+
+        secondsGearSmall.x = 0;
+        seconds2minutes1.x = 180;
+        seconds2minutes2.x = 180;
+        seconds2minutes3.x = 330;
+        seconds2minutes4.x = 330;
+        minutesGearBig.x   = 450;
+        minutesGearSmall.x = 450;
+        minutes2hours1.x   = 450;
+        minutes2hours2.x   = 450;
+        minutes2hours3.x   = 300;
+        minutes2hours4.x   = 300;
+        hoursGearBig.x     = 180;
+
+        minutes2hours1.y   = 180;
+        minutes2hours2.y   = 180;
+        minutes2hours3.y   = 180;
+        minutes2hours4.y   = 180;
+        hoursGearBig.y     = 180;
+
+
+        secondsGearSmall.angle = 0;
+        seconds2minutes1.angle = 0;
+        seconds2minutes2.angle = 45;
+        seconds2minutes3.angle = 0;
+        seconds2minutes4.angle = 45;
+        minutesGearBig.angle   = 0;
+        minutesGearSmall.angle = 45;
+        minutes2hours2.angle = 45;
+        minutes2hours4.angle = 45;
+
+
+        secondsGearSmall.color = "rgba( 255,   0,   0,   1)";
+        seconds2minutes1.color = "rgba( 204,  51,   0,   1)";
+        seconds2minutes2.color = "rgba( 153, 102,   0,   1)";
+        seconds2minutes3.color = "rgba( 102, 153,   0,   1)";
+        seconds2minutes4.color = "rgba(  51, 204,   0,   1)";
+        minutesGearBig.color   = "rgba(   0, 255,   0,   1)";
+        minutesGearSmall.color = "rgba(   0, 255,   0,   1)";
+        minutes2hours1.color   = "rgba(   0, 204,  51,   1)";
+        minutes2hours2.color   = "rgba(   0, 153, 102,   1)";
+        minutes2hours3.color   = "rgba(   0, 102, 153,   1)";
+        minutes2hours4.color   = "rgba(   0,  51, 204,   1)";
+        hoursGearBig.color     = "rgba(   0,   0, 255,   1)";
+
+        var holeRadius = 5
+        var spokeInner = 10;
+
+        secondsGearSmall.holeRadius = holeRadius;
+        secondsGearSmall.spokeInner = spokeInner;
+        seconds2minutes1.holeRadius = holeRadius;
+        seconds2minutes1.spokeInner = spokeInner;
+        seconds2minutes2.holeRadius = holeRadius;
+        seconds2minutes2.spokeInner = spokeInner;
+        seconds2minutes3.holeRadius = holeRadius;
+        seconds2minutes3.spokeInner = spokeInner;
+        seconds2minutes4.holeRadius = holeRadius;
+        seconds2minutes4.spokeInner = spokeInner;
+        minutesGearBig.holeRadius   = holeRadius;
+        minutesGearBig.spokeInner   = spokeInner;
+        minutes2hours1.holeRadius   = holeRadius;
+        minutes2hours1.spokeInner   = spokeInner;
+        minutes2hours2.holeRadius   = holeRadius;
+        minutes2hours2.spokeInner   = spokeInner;
+        minutes2hours3.holeRadius   = holeRadius;
+        minutes2hours3.spokeInner   = spokeInner;
+        minutes2hours4.holeRadius   = holeRadius;
+        minutes2hours4.spokeInner   = spokeInner;
+        hoursGearBig.holeRadius     = holeRadius;
+        hoursGearBig.spokeInner     = spokeInner;
+
+        secondsGearSmall.draw();
+        seconds2minutes1.draw();
+        seconds2minutes2.draw();
+        seconds2minutes3.draw();
+        seconds2minutes4.draw();
+        minutesGearBig.draw();
+        minutesGearSmall.draw();
+        minutes2hours1.draw();
+        minutes2hours2.draw();
+        minutes2hours3.draw();
+        minutes2hours4.draw();
+        hoursGearBig.draw();
+    };
+    gears.x = 30;
+    gears.y = 100;
+    gears.scaleX = 0.6;
+    gears.scaleY = 0.6;
+    gears.draw();
 }
 
 var q1 = function(){
-    gearExample();
+    drawClock();
 };
 
 // draw function for 
@@ -564,7 +672,6 @@ PhysicsGearSystem = function(gearLinks){
     }
 
     this.draw = function() {
-        //var ctx = this.
         for(var i = 0; i < this.gears.length; i++) {
             this.gears[i].draw();
         }
