@@ -278,41 +278,60 @@ var gearExample = function(){
 
 var drawClock = function() {
     var canvas = "canvas-q1";
-    var gears = new CanvasObject(canvas);
-    gears.drawFeatures = function() {
-        var canvas = this.canvas;
-        var secondsGearSmall = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var seconds2minutes1 = new CanvasGear(canvas, 150, 155, 120, 0.5); // Divide by 5
-        var seconds2minutes2 = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var seconds2minutes3 = new CanvasGear(canvas, 120, 125,  96, 0.5); // Divide by 4
-        var seconds2minutes4 = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var minutesGearBig   = new CanvasGear(canvas,  90,  95,  72, 0.5); // Divide by 3
-        var minutesGearSmall = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var minutes2hours1   = new CanvasGear(canvas, 150, 155, 120, 0.5); // Divide by 5
-        var minutes2hours2   = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var minutes2hours3   = new CanvasGear(canvas, 120, 125,  96, 0.5); // Divide by 4
-        var minutes2hours4   = new CanvasGear(canvas,  30,  35,  24, 0.5);
-        var hoursGearBig     = new CanvasGear(canvas,  90,  95,  72, 0.5); // Divide by 3
+    var clock = new CanvasObject(canvas);
+    clock.gears = [
+    	new CanvasGear(canvas,  30,  35,  24, 0.5),
+    	new CanvasGear(canvas, 150, 155, 120, 0.5),
+		new CanvasGear(canvas,  30,  35,  24, 0.5),
+		new CanvasGear(canvas, 120, 125,  96, 0.5),
+		new CanvasGear(canvas,  30,  35,  24, 0.5),
+		new CanvasGear(canvas,  90,  95,  72, 0.5),
+		new CanvasGear(canvas,  30,  35,  24, 0.5),
+		new CanvasGear(canvas, 150, 155, 120, 0.5),
+		new CanvasGear(canvas,  30,  35,  24, 0.5),
+		new CanvasGear(canvas, 120, 125,  96, 0.5),
+		new CanvasGear(canvas,  30,  35,  24, 0.5),
+		new CanvasGear(canvas,  90,  95,  72, 0.5)
+    ];
+    clock.setup = function() {
+        var secondsGearSmall = this.gears[0];
+        var seconds2minutes1 = this.gears[1]; // Divide by 5
+        var seconds2minutes2 = this.gears[2];
+        var seconds2minutes3 = this.gears[3]; // Divide by 4
+        var seconds2minutes4 = this.gears[4];
+        var minutesGearBig   = this.gears[5]; // Divide by 3
+        var minutesGearSmall = this.gears[6];
+        var minutes2hours1   = this.gears[7]; // Divide by 5
+        var minutes2hours2   = this.gears[8];
+        var minutes2hours3   = this.gears[9]; // Divide by 4
+        var minutes2hours4   = this.gears[10];
+        var hoursGearBig     = this.gears[11]; // Divide by 3
 
-        secondsGearSmall.x = 0;
+        var positionThird = new Vector([120, 0]);
+        var angle = Math.acos((120*120 + 180*180 - 150*150) / (2 * 120 * 180))
+        positionThird.rotate(angle) //4, 5, 6
+
+        secondsGearSmall.x =   0;
         seconds2minutes1.x = 180;
         seconds2minutes2.x = 180;
-        seconds2minutes3.x = 330;
-        seconds2minutes4.x = 330;
-        minutesGearBig.x   = 450;
-        minutesGearSmall.x = 450;
-        minutes2hours1.x   = 450;
-        minutes2hours2.x   = 450;
-        minutes2hours3.x   = 300;
-        minutes2hours4.x   = 300;
-        hoursGearBig.x     = 180;
 
-        minutes2hours1.y   = 180;
-        minutes2hours2.y   = 180;
-        minutes2hours3.y   = 180;
-        minutes2hours4.y   = 180;
-        hoursGearBig.y     = 180;
+        seconds2minutes3.x = positionThird.vals[0];
+        seconds2minutes4.x = positionThird.vals[0];
+        seconds2minutes3.y = positionThird.vals[1];
+        seconds2minutes4.y = positionThird.vals[1];
+        // seconds2minutes3.x = 330;
+        // seconds2minutes4.x = 330;
 
+        minutesGearBig.x   = 0;
+        minutesGearSmall.x = 0;
+
+        minutes2hours1.x   = -180;
+        minutes2hours2.x   = -180;
+        minutes2hours3.x   = -1 * positionThird.vals[0];
+        minutes2hours3.y   = -1 * positionThird.vals[1];
+        minutes2hours4.x   = -1 * positionThird.vals[0];
+        minutes2hours4.y   = -1 * positionThird.vals[1];
+        hoursGearBig.x     = 0;
 
         secondsGearSmall.angle = 0;
         seconds2minutes1.angle = 0;
@@ -323,7 +342,6 @@ var drawClock = function() {
         minutesGearSmall.angle = 45;
         minutes2hours2.angle = 45;
         minutes2hours4.angle = 45;
-
 
         secondsGearSmall.color = "rgba( 255,   0,   0,   1)";
         seconds2minutes1.color = "rgba( 204,  51,   0,   1)";
@@ -339,7 +357,7 @@ var drawClock = function() {
         hoursGearBig.color     = "rgba(   0,   0, 255,   1)";
 
         var holeRadius = 5
-        var spokeInner = 10;
+        var spokeInner = 12;
 
         secondsGearSmall.holeRadius = holeRadius;
         secondsGearSmall.spokeInner = spokeInner;
@@ -363,25 +381,43 @@ var drawClock = function() {
         minutes2hours4.spokeInner   = spokeInner;
         hoursGearBig.holeRadius     = holeRadius;
         hoursGearBig.spokeInner     = spokeInner;
+    };
+    clock.drawFeatures = function() {
+        var secondsGearSmall = this.gears[0];
+        var seconds2minutes1 = this.gears[1]; // Divide by 5
+        var seconds2minutes2 = this.gears[2];
+        var seconds2minutes3 = this.gears[3]; // Divide by 4
+        var seconds2minutes4 = this.gears[4];
+        var minutesGearBig   = this.gears[5]; // Divide by 3
+        var minutesGearSmall = this.gears[6];
+        var minutes2hours1   = this.gears[7]; // Divide by 5
+        var minutes2hours2   = this.gears[8];
+        var minutes2hours3   = this.gears[9]; // Divide by 4
+        var minutes2hours4   = this.gears[10];
+        var hoursGearBig     = this.gears[11]; // Divide by 3
 
-        secondsGearSmall.draw();
-        seconds2minutes1.draw();
-        seconds2minutes2.draw();
-        seconds2minutes3.draw();
-        seconds2minutes4.draw();
-        minutesGearBig.draw();
-        minutesGearSmall.draw();
-        minutes2hours1.draw();
-        minutes2hours2.draw();
+        hoursGearBig.draw();
         minutes2hours3.draw();
         minutes2hours4.draw();
-        hoursGearBig.draw();
+        minutes2hours1.draw();
+        minutes2hours2.draw();
+        minutesGearBig.draw();
+        minutesGearSmall.draw();
+        seconds2minutes3.draw();
+        seconds2minutes4.draw();
+        seconds2minutes1.draw();
+        seconds2minutes2.draw();
+        secondsGearSmall.draw();
     };
-    gears.x = 30;
-    gears.y = 100;
-    gears.scaleX = 0.6;
-    gears.scaleY = 0.6;
-    gears.draw();
+    clock.update = function() {
+    	
+    };
+    clock.setup();
+    clock.x = 250;
+    clock.y = 250;
+    clock.scaleX = 0.7;
+    clock.scaleY = 0.7;
+    clock.draw();
 }
 
 var q1 = function(){
