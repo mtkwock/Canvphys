@@ -258,8 +258,9 @@ var hexagrams = function(){
 
 var gearExample = function(){
     var canvas = "canvas-q1";
-    var gearDrawing = new CanvasGear(canvas, 70, 80, 24, 0.5);
+    var gearDrawing = new CanvasGear(canvas, 70, 80, 17, 0.5);
     var gearSmall = new CanvasGear(canvas, 55, 65, 18, 0.5);
+    gearDrawing.spokeCount = 10;
     gearDrawing.x = 250;
     gearDrawing.y = 250;
     gearDrawing.filled = true;
@@ -528,7 +529,8 @@ PhysicsGearSystem = function(gearLinks){
     };
 
     this.addGear = function(newGear) {
-
+    	newGear.gearSystem = this;
+    	this.gears.push(newGear);
     };
 
     for(var i = 0; i < gearLinks.length; i++){
@@ -562,15 +564,9 @@ PhysicsGearSystem = function(gearLinks){
     }
 
     this.draw = function() {
-        var ctx = this.
+        //var ctx = this.
         for(var i = 0; i < this.gears.length; i++) {
-            var drawing = this.gears.drawing;
-        }
-        if(this.drawing) {
-            this.drawing.x = this.p.vals[0];
-            this.drawing.y = this.p.vals[1];
-            this.drawing.angle = this.a;
-            this.drawing.draw();
+            this.gears[i].draw();
         }
     };
 }
