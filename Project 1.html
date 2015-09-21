@@ -12,7 +12,7 @@
   <h2>Team: ??</h2>
   
   <p>Question 1</p>
-  <canvas id="canvas-q1" height="500" width="500" style="border: 1px solid grey">
+  <canvas id="canvas-q1" height="800" width="800" style="border: 1px solid grey">
   </canvas>
 
   <p>Question 2</p>
@@ -20,7 +20,14 @@
   </canvas>
 
   <p>Question 3</p>
-  <canvas id="canvas-q3" height="500" width="500" style="border: 1px solid grey">
+  <p>Select Simulation
+	<select id="selectSimulation" onchange="selectNew()">
+  		<option value=0>Mass Spring System</option>
+		<option value=1>Clock</option>
+		<option value=2>Three Mass-Springs</option>
+	</select>
+	</p>
+  <canvas id="canvas-q3" height="800" width="800" style="border: 1px solid grey">
   </canvas>
 
   
@@ -173,15 +180,15 @@ var CanvasGear = function(canvas, innerRadius, outerRadius, teethCount, teethWid
         outer.rotate(innerEnd.angle() * this.self.outerFraction);
 
         ctx.beginPath();
-        ctx.moveTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction);
-        ctx.lineTo(innerBegin.vals[0], innerBegin.vals[1]);
+        //ctx.moveTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction);
+        ctx.moveTo(innerBegin.vals[0], innerBegin.vals[1]);
         ctx.lineTo(innerEnd.vals[0]  , innerEnd.vals[1]);
         ctx.lineTo(outer.vals[0]     , outer.vals[1]);
-        ctx.lineTo(outer.vals[0]     , -1 * outer.vals[1]);
-        ctx.lineTo(innerEnd.vals[0]  , -1 * innerEnd.vals[1]);
-        ctx.lineTo(innerBegin.vals[0], -1 * innerBegin.vals[1]);
-        ctx.lineTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * -1 * this.self.innerFraction);
-        ctx.arcTo(this.self.innerRadius * this.self.innerFraction, 0, innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction, this.self.innerRadius);
+        ctx.lineTo(outer.vals[0]     , outer.vals[1] * -1);
+        ctx.lineTo(innerEnd.vals[0]  , innerEnd.vals[1] * -1);
+        ctx.lineTo(innerBegin.vals[0], innerBegin.vals[1] * -1);
+        //ctx.lineTo(innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * -1 * this.self.innerFraction);
+        //ctx.arcTo(this.self.innerRadius * this.self.innerFraction, 0, innerBegin.vals[0] * this.self.innerFraction, innerBegin.vals[1] * this.self.innerFraction, this.self.innerRadius);
         ctx.fill();
     };
     this.spoke.thickness = function() {
@@ -190,10 +197,6 @@ var CanvasGear = function(canvas, innerRadius, outerRadius, teethCount, teethWid
     this.spoke.drawFeatures = function() {
         var ctx = this.self.context();
         ctx.rect(this.self.holeRadius, this.thickness() * -0.5, this.self.innerRadius - this.self.holeRadius, this.thickness());
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, 0, this.self.spokeInner, 0, 2 * Math.PI / this.self.spokeCount, false);
-        ctx.arc(0, 0, this.self.holeRadius, 2 * Math.PI / this.self.spokeCount, 0, true);
         ctx.fill();
     };
     this.drawFeatures = function() {
@@ -205,6 +208,15 @@ var CanvasGear = function(canvas, innerRadius, outerRadius, teethCount, teethWid
             this.spoke.draw();
             this.spoke.rotate(360 / this.spokeCount);
         }
+        var ctx = this.context();
+        ctx.beginPath();
+        ctx.arc(0, 0, this.spokeInner, 0, 2 * Math.PI, false);
+        ctx.arc(0, 0, this.holeRadius, 2 * Math.PI, 0, true);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, this.innerRadius, 0, 2 * Math.PI, false);
+        ctx.arc(0, 0, this.innerRadius - this.spokeInner + this.holeRadius, 2 * Math.PI, 0, true);
+        ctx.fill();
     };
 };
 
@@ -276,8 +288,8 @@ var gearExample = function(){
     gearSmall.draw();
 };
 
-var drawClock = function() {
-    var canvas = "canvas-q1";
+var drawClock = function(canvas) {
+    var canvas = canvas;
     var clock = new CanvasObject(canvas);
     clock.gears = [
     	new CanvasGear(canvas,  30,  35,  24, 0.5),
@@ -292,6 +304,11 @@ var drawClock = function() {
 		new CanvasGear(canvas, 120, 125,  96, 0.5),
 		new CanvasGear(canvas,  30,  35,  24, 0.5),
 		new CanvasGear(canvas,  90,  95,  72, 0.5)
+    ];
+    clock.hands = [
+    	new CanvasPolygon(canvas, [[0, 5], [100, 5], [100, 10], [150, 0], [100, -10], [100, -5], [0, -5]]),
+    	new CanvasPolygon(canvas, [[0, 5], [100, 5], [100, 10], [150, 0], [100, -10], [100, -5], [0, -5]]),
+    	new CanvasPolygon(canvas, [[0, 5], [100, 5], [100, 10], [150, 0], [100, -10], [100, -5], [0, -5]])
     ];
     clock.setup = function() {
         var secondsGearSmall = this.gears[0];
@@ -355,6 +372,11 @@ var drawClock = function() {
         minutes2hours3.color   = "rgba(   0, 102, 153,   1)";
         minutes2hours4.color   = "rgba(   0,  51, 204,   1)";
         hoursGearBig.color     = "rgba(   0,   0, 255,   1)";
+        clock.hands[0].color   = "rgba( 127,   0,   0,   1)";
+        clock.hands[1].color   = "rgba(   0, 127,   0,   1)";
+        clock.hands[2].color   = "rgba(   0,   0, 127,   1)";
+
+        clock.hands[0].filled = true;
 
         var holeRadius = 5
         var spokeInner = 12;
@@ -395,7 +417,6 @@ var drawClock = function() {
         var minutes2hours3   = this.gears[9]; // Divide by 4
         var minutes2hours4   = this.gears[10];
         var hoursGearBig     = this.gears[11]; // Divide by 3
-
         hoursGearBig.draw();
         minutes2hours3.draw();
         minutes2hours4.draw();
@@ -408,20 +429,58 @@ var drawClock = function() {
         seconds2minutes1.draw();
         seconds2minutes2.draw();
         secondsGearSmall.draw();
+        clock.hands[0].draw();
+        clock.hands[1].draw();
+        clock.hands[2].draw();
     };
     clock.update = function() {
-    	
+    	var time = (new Date() / 1000 % 36000) * 360; // degrees in minutes
+        var secondsGearSmall = this.gears[0];
+        var seconds2minutes1 = this.gears[1]; // Divide by 5
+        var seconds2minutes2 = this.gears[2];
+        var seconds2minutes3 = this.gears[3]; // Divide by 4
+        var seconds2minutes4 = this.gears[4];
+        var minutesGearBig   = this.gears[5]; // Divide by 3
+        var minutesGearSmall = this.gears[6];
+        var minutes2hours1   = this.gears[7]; // Divide by 5
+        var minutes2hours2   = this.gears[8];
+        var minutes2hours3   = this.gears[9]; // Divide by 4
+        var minutes2hours4   = this.gears[10];
+        var hoursGearBig     = this.gears[11]; // Divide by 3
+        secondsGearSmall.angle = time - 90;
+        clock.hands[0].angle   = time - 90;
+        seconds2minutes1.angle = time / -5 - 90;
+        seconds2minutes2.angle = time / -5 - 45;
+        seconds2minutes3.angle = time / 20 - 90;
+        seconds2minutes4.angle = time / 20 - 45;
+        minutesGearBig.angle   = time / -60 - 90;
+        minutesGearSmall.angle = time / -60 - 45;
+        clock.hands[1].angle   = time / -60 - 90;
+        minutes2hours1.angle   = time / 300 - 90;
+        minutes2hours2.angle   = time / 300 - 45;
+        minutes2hours3.angle   = time / -1200 - 90;
+        minutes2hours4.angle   = time / -1200 - 45;
+        hoursGearBig.angle     = time / 3600 - 90;
+        clock.hands[2].angle   = time / 3600 - 90;
     };
     clock.setup();
-    clock.x = 250;
-    clock.y = 250;
-    clock.scaleX = 0.7;
-    clock.scaleY = 0.7;
+    clock.update();
+    clock.x = 400;
+    clock.y = 400;
     clock.draw();
+    var redraw = function() {
+    	clock.update();
+    	var canvas = document.getElementById("canvas-q3");
+    	var context = canvas.getContext("2d");
+    	context.setTransform(1, 0, 0, 1, 0, 0);
+    	context.clearRect(0, 0, canvas.width, canvas.height);
+    	clock.draw();    	
+    }
+    return redraw;
 }
 
 var q1 = function(){
-    drawClock();
+    var updateFunc = drawClock("canvas-q1");
 };
 
 // draw function for 
@@ -523,6 +582,9 @@ var PhysicsChange = function(){
 };
 
 PhysicsChange.prototype = {
+	draw: function() {
+
+	},
     apply: function(dt) {
     }
 };
@@ -540,6 +602,43 @@ PhysicsSpring = function (springConstant, restingLength, objectOne, objectTwo) {
         force.scale(-1);
         this.physicsObjects[1].addForce(force, 0);
     };
+    this.draw = function() {
+    	var p0 = this.physicsObjects[0].p;
+    	var p1 = this.physicsObjects[1].p;
+    	if(!this.drawing){
+    		var canvas = this.physicsObjects[0].drawing.canvas || this.physicsObjects[1].drawing.canvas
+	    	if(canvas){
+		    	this.drawing = new CanvasObject(canvas);
+		    	this.drawing.drawFeatures = function() {
+		    		var ctx = this.context();
+		    		ctx.beginPath();
+		    		ctx.moveTo(0, 0);
+		    		ctx.lineTo(10, 0);
+		    		ctx.lineTo(15, 10);
+		    		ctx.lineTo(25,-10);
+		    		ctx.lineTo(35, 10);
+		    		ctx.lineTo(45, -10);
+		    		ctx.lineTo(55, 10);
+		    		ctx.lineTo(65, -10);
+		    		ctx.lineTo(75, 10);
+		    		ctx.lineTo(85, -10);
+		    		ctx.lineTo(90, 0);
+		    		ctx.lineTo(100, 0);
+		    		ctx.stroke();
+		    	}
+	    	}
+	    	else {
+	    		console.log("Not found")
+	    		return;
+	    	}
+    	}
+    	var dp = p1.sub(p0);
+    	this.drawing.scaleX = dp.magnitude() / 100;
+    	this.drawing.x = p0.vals[0];
+    	this.drawing.y = p0.vals[1];
+    	this.drawing.angle = 180 / Math.PI * dp.angle();
+    	this.drawing.draw();
+    }
 }
 
 PhysicsResistance = function(constant, objectResisted, objectsResistance) {
@@ -562,6 +661,8 @@ PhysicsResistance = function(constant, objectResisted, objectsResistance) {
     }
 }
 
+PhysicsResistance.prototype = Object.create(PhysicsChange.prototype);
+
 // Assumes that change in R is negligible
 PhysicsGravityConstant = function(gravity, objects) {
     this.g = gravity; // Gravity is a vector with direction
@@ -572,6 +673,8 @@ PhysicsGravityConstant = function(gravity, objects) {
         }
     }
 }
+
+PhysicsGravityConstant.prototype = Object.create(PhysicsChange.prototype);
 
 var PhysicsObject = function(){
     this.m = 1; // Mass
@@ -626,15 +729,15 @@ PhysicsObject.prototype = {
         if(this.forceDrawing){
             this.forceDrawing.x = this.p.vals[0];
             this.forceDrawing.y = this.p.vals[1];
-            this.forceDrawing.angle = this.ddp.angle() * 180 / Math.PI - 90;
-            this.forceDrawing.scaleY = this.ddp.magnitude() / 100;
+            this.forceDrawing.angle = this.ddp.angle() * 180 / Math.PI;
+            this.forceDrawing.scaleX = this.ddp.magnitude() / 100;
             this.forceDrawing.draw();
         }
         if(this.impulseDrawing) {
             this.impulseDrawing.x = this.p.vals[0];
             this.impulseDrawing.y = this.p.vals[1];
-            this.impulseDrawing.angle = this.dp.angle() * 180 / Math.PI - 90;
-            this.impulseDrawing.scaleY = this.dp.magnitude() / 100;
+            this.impulseDrawing.angle = this.dp.angle() * 180 / Math.PI;
+            this.impulseDrawing.scaleX = this.dp.magnitude() / 100;
             this.impulseDrawing.draw();
         }
     }
@@ -779,6 +882,9 @@ PhysicsSystem.prototype = {
     updateDt: function(){
         var newTime = new Date() / 1000;
         this.dt = newTime - this.lastTime;
+        if(this.dt > 0.05){
+        	this.dt = 0.05;
+        }
         this.lastTime = newTime;
     },
     applyForces: function() {
@@ -818,6 +924,9 @@ PhysicsSystem.prototype = {
         this.physicsObjects.forEach(function (object) {
             object.draw();
         });
+        this.physicsForces.forEach(function(force){
+        	force.draw();
+        });
     },
     update: function() {
         this.updateDt();
@@ -841,14 +950,51 @@ PhysicsSystem.prototype = {
     }
 };
 
-var q3 = function(){
+var ThreeMassThreeSprings = function() {
+	var canvas = "canvas-q3";
+	var system = new PhysicsSystem(canvas);
+	var ball1 = new PhysicsObject();
+	var ball2 = new PhysicsObject();
+	var ball3 = new PhysicsObject();
+	ball1.addTransform(new Vector([700, 200]));
+	ball2.addTransform(new Vector([200, 500]));
+	ball3.addTransform(new Vector([600, 500]));
+
+    ball1.drawing = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
+    ball2.drawing = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
+    ball3.drawing = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
+
+    ball1.drawing.color = "rgba(255,0,0,1)";
+    ball2.drawing.color = "rgba(0,255,0,1)";
+    ball3.drawing.color = "rgba(0,0,255,1)";
+
+    var spring12 = new PhysicsSpring(15, 300, ball1, ball2);
+    var spring13 = new PhysicsSpring(20, 300, ball1, ball3);
+    var spring23 = new PhysicsSpring(25, 300, ball2, ball3);
+
+    system.addObject(ball1);
+    system.addObject(ball2);
+    system.addObject(ball3);
+
+    system.addForce(spring12);
+    system.addForce(spring13);
+    system.addForce(spring23);
+
+    var update = function() {
+    	system.update();
+    }
+
+    return update;
+}
+
+var massSpringSystem = function() {
     var canvas = "canvas-q3";
     var system = new PhysicsSystem(canvas);
     var ball1 = new PhysicsObject();
     var ball2 = new PhysicsObject();
-    ball1.addTransform(new Vector([250, 100]));
+    ball1.addTransform(new Vector([400, 100]));
     ball1.fixed = true;
-    ball2.addTransform(new Vector([400, 100]));
+    ball2.addTransform(new Vector([600, 100]));
     var drawing1 = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
     var drawing2 = new CanvasPolygon(canvas, [[20, 20], [20, -20], [-20, -20], [-20, 20]], true);
     drawing1.color = "rgba(255, 0, 0, 1)";
@@ -861,17 +1007,17 @@ var q3 = function(){
         var ctx = this.context();
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, 10);
-        ctx.moveTo(-3, 7);
-        ctx.lineTo(0, 10);
-        ctx.lineTo(3, 7);
+        ctx.lineTo(10, 0);
+        ctx.moveTo(7, -3);
+        ctx.lineTo(10, 0);
+        ctx.lineTo(7, 3);
         ctx.stroke();
     };
 
     ball2.impulseDrawing = new CanvasObject(canvas);
     ball2.impulseDrawing.drawFeatures = ball2.forceDrawing.drawFeatures;
 
-    var spring1 = new PhysicsSpring(2000, 150, ball1, ball2);
+    var spring1 = new PhysicsSpring(10, 150, ball1, ball2);
     var airResistance = new PhysicsResistance(0.1, ball2, []);
     var gravity = new PhysicsGravityConstant(new Vector([0, 1000]), [ball1, ball2]);
 
@@ -881,17 +1027,42 @@ var q3 = function(){
     system.addForce(airResistance);
     system.addForce(gravity);
 
-    var gear = new PhysicsGear(1, canvas, 12, 50, 60, 0.5);
-    system.addObject(gear);
+    var update = function() {
+    	system.update();
+    }
 
-    setInterval(function() {
-        system.update();
-    }, 15);
+    return update;
+}
+
+var simulation = {
+	simulationNum: 0,
+	running: null,
+	simulations: [
+		massSpringSystem(),
+		drawClock("canvas-q3"),
+		ThreeMassThreeSprings()
+	],
+	start: function(simId){
+		if(this.running){
+			console.log("Clearing");
+			clearInterval(this.running);
+		}
+		console.log("Starting")
+		this.running = setInterval(this.simulations[simId], 20);
+	}
+}
+
+var selectNew = function() {
+	var e = document.getElementById("selectSimulation");
+	var simulationId = e.options[e.selectedIndex].value;
+	simulation.start(simulationId);
+}
+
+var q3 = function(){
+	selectNew()
 };
 
   </script>
 
   
-
-
 </body></html>
