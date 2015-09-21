@@ -25,6 +25,7 @@
   		<option value=0>Mass Spring System</option>
 		<option value=1>Clock</option>
 		<option value=2>Three Mass-Springs</option>
+        <option value=3>Circle Springs</option>
 	</select>
 	</p>
   <canvas id="canvas-q3" height="800" width="800" style="border: 1px solid grey">
@@ -589,7 +590,7 @@ PhysicsChange.prototype = {
     }
 };
 
-PhysicsSpring = function (springConstant, restingLength, objectOne, objectTwo) {
+var PhysicsSpring = function (springConstant, restingLength, objectOne, objectTwo) {
     PhysicsChange.call(this);
     this.k = springConstant;
     this.physicsObjects = [objectOne, objectTwo];
@@ -597,7 +598,10 @@ PhysicsSpring = function (springConstant, restingLength, objectOne, objectTwo) {
     this.apply = function () {
         var vec = this.physicsObjects[1].p.sub(this.physicsObjects[0].p);
         var mag = this.k * (vec.magnitude() - this.restingLength);
+        mag = mag > 40000 ? 40000 : mag;
+        mag = mag < -40000 ? -40000 : mag;
         var force = vec.unit().scalar(mag);
+        console.log(mag);
         this.physicsObjects[0].addForce(force, 0);
         force.scale(-1);
         this.physicsObjects[1].addForce(force, 0);
@@ -665,6 +669,7 @@ PhysicsResistance.prototype = Object.create(PhysicsChange.prototype);
 
 // Assumes that change in R is negligible
 PhysicsGravityConstant = function(gravity, objects) {
+    PhysicsChange.call(this);
     this.g = gravity; // Gravity is a vector with direction
     this.physicsObjects = objects;
     this.apply = function() {
@@ -675,6 +680,21 @@ PhysicsGravityConstant = function(gravity, objects) {
 }
 
 PhysicsGravityConstant.prototype = Object.create(PhysicsChange.prototype);
+
+PhysicsSinusMovement = function(object, center, direction, amplitude, frequency) {
+    PhysicsChange.call(this);
+    this.physicsObjects = [object];
+    this.center = center;
+    this.direction = direction.unit();
+    this.amplitude = amplitude;
+    this.frequency = frequency;
+    this.apply = function() {
+        var deltaP = this.direction.scalar(this.amplitude).scalar(Math.sin(new Date() / 500 * Math.PI * this.frequency));
+        this.physicsObjects[0].p = this.center.add(deltaP);
+    }
+}
+
+PhysicsSinusMovement.prototype = Object.create(PhysicsChange.prototype);
 
 var PhysicsObject = function(){
     this.m = 1; // Mass
@@ -882,8 +902,8 @@ PhysicsSystem.prototype = {
     updateDt: function(){
         var newTime = new Date() / 1000;
         this.dt = newTime - this.lastTime;
-        if(this.dt > 0.05){
-        	this.dt = 0.05;
+        if(this.dt > 0.01){
+        	this.dt = 0.01;
         }
         this.lastTime = newTime;
     },
@@ -1032,7 +1052,92 @@ var massSpringSystem = function() {
     }
 
     return update;
-}
+};
+
+var circleSprings = function(canvas) {
+    var system = new PhysicsSystem(canvas);
+    var numBallsPerRing = 30;
+    var numRings = 4;
+    var radius = 300;
+    var radDecrease = 70;
+    var rings = [];
+    var balls = [];
+    var springs = [];
+    var center = new Vector([400, 350]);
+    var angleDif = 2 * Math.PI / numBallsPerRing;
+    var makeSpring = function(ob1, ob2){
+        var restingLength = ob1.p.sub(ob2.p).magnitude();
+        return new PhysicsSpring(0.01 * springConstant * restingLength, restingLength, ob1, ob2);
+    }
+    var springConstant = 400;
+    var drawFunc = function() {
+        var ctx = this.context();
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 10, 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    for(var i = 0; i < numRings; i++) {
+        var ring = [];
+        for(var j = 0; j < numBallsPerRing; j++) {
+            var dir = new Vector([radius - i * radDecrease, 0]);
+            dir.rotate(angleDif * (j - i/2) - Math.PI /2);
+            var ball = new PhysicsObject();
+            ball.addTransform(dir.add(center));
+            ball.drawing = new CanvasObject(canvas);
+            ball.drawing.drawFeatures = drawFunc;
+            system.addObject(ball);
+            ring.push(ball);
+            balls.push(ball);
+        }
+        rings.push(ring);
+    }
+
+    var middleBall = new PhysicsObject();
+    middleBall.addTransform(center);
+    middleBall.drawing = new CanvasObject(canvas);
+    middleBall.drawing.drawFeatures = drawFunc;
+    system.addObject(middleBall);
+    balls.push(middleBall);
+
+    for(var j = 0; j < numRings; j++){
+        for(var i = 0; i < numBallsPerRing; i++){
+            var spring = makeSpring(rings[j][i], rings[j][(i+1) % numBallsPerRing]);
+            system.addForce(spring);
+        }
+    }
+
+    for(var i = 0; i < numBallsPerRing; i++){
+        system.addForce(makeSpring(middleBall, rings[numRings-1][i]));
+    }
+
+    //middleBall.fixed = true;
+    balls[0].fixed = true;
+
+    for(var j = 0; j < numRings-1; j++){
+        for(var i = 0; i < numBallsPerRing; i++){
+            var spring1 = makeSpring(rings[j][i], rings[j+1][(i) % numBallsPerRing]);
+            var spring2 = makeSpring(rings[j][i], rings[j+1][(i+1) % numBallsPerRing]);
+            system.addForce(spring1);
+            system.addForce(spring2);
+        }
+    }
+
+    balls.forEach(function(ball){
+        system.addForce(new PhysicsResistance(0.2, ball, []));
+    })
+
+    var gravity = new PhysicsGravityConstant(new Vector([0, 500]), balls);
+
+    system.addForce(gravity);
+
+    system.addTransform(new PhysicsSinusMovement(balls[0], new Vector([400, 50]), new Vector([1, 0]), 100, 0.25));
+
+    var update = function() {
+        system.update();
+    }
+
+    return update;
+};
 
 var simulation = {
 	simulationNum: 0,
@@ -1040,14 +1145,13 @@ var simulation = {
 	simulations: [
 		massSpringSystem(),
 		drawClock("canvas-q3"),
-		ThreeMassThreeSprings()
+		ThreeMassThreeSprings(),
+        circleSprings("canvas-q3")
 	],
 	start: function(simId){
 		if(this.running){
-			console.log("Clearing");
 			clearInterval(this.running);
 		}
-		console.log("Starting")
 		this.running = setInterval(this.simulations[simId], 20);
 	}
 }
